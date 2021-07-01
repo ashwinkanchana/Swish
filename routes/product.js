@@ -1,21 +1,44 @@
-const express = require('express')
-const router = express.Router()
-const { pool } = require('../config/mysql')
+const router = require('express').Router()
+const pool = require('../config/mysql')
+const { productValidator } = require('../validators/product')
+const { validationResult } = require('express-validator')
+const { insertProductCache, getStore } = require('../config/dynamoDB')
+const domainName = process.env.DOMAIN_NAME
 
 
-// GET test
-router.post('/add', async (req, res) => {
+// POST create and update store
+router.post('/', productValidator, async (req, res) => {
     try {
-        const {name, price, description} = req.body
-        const insertProdcutQuery = s
-        res.status(200).json({
-            mesage: 'Successfully added product',
-            name, price, description
-        })
+        console.log(req.body)
+        const { productName, price, description, userName, userID } = req.body
+        const validationErrors = validationResult(req).array();
+        if (validationErrors.length > 0) {
+            var error = validationErrors.map(function (item) {
+                return item['msg'];
+            });
+            return res.status(400).json({ error })
+        }
+
+        //Create new product
+        const insertQuery = `insert into products (product_name, product_price, product_description, user_id) values(${pool.escape(productName)}, ${pool.escape(price)}, ${pool.escape(description)}, ${pool.escape(userID)}); select product_name, product_price, product_description from products where user_id = ${pool.escape(userID)};`
+        const result = (await pool.query(insertQuery))
+        console.log(result)
+        const productsArray = result[1]
+        if (result[0].affectedRows) {
+            insertProductCache(userName, productsArray)
+            return res.status(200).json({
+                message: 'Successfully added a product',
+            })
+        }
+        else
+            throw new Error('Couldn\'t insert new user to MySQL')
+
     } catch (error) {
         console.log(error)
-        res.status(500).json({error: 'Something went wrong'})
+        res.status(500).json({ error: ['Something went wrong!'] })
     }
 })
+
+
 
 module.exports = router

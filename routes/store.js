@@ -1,16 +1,15 @@
-const express = require('express')
-const router = express.Router()
+const router = require('express').Router()
 const pool = require('../config/mysql')
-const {storeValidator} = require('../validators/store')
+const { storeValidator } = require('../validators/store')
 const { validationResult } = require('express-validator')
-const { insertStoreCache, updateStoreCache, getAllStores } = require('../config/dynamoDB')
+const { insertStoreCache, updateStoreCache, getAllStores, getStore } = require('../config/dynamoDB')
 const domainName = process.env.DOMAIN_NAME
 
 
 // POST create and update store
 router.post('/', storeValidator, async (req, res) => {
     try {
-        const {userName, storeName, phoneNumber} = req.body
+        const { userName, storeName, phoneNumber } = req.body
         const validationErrors = validationResult(req).array();
         if (validationErrors.length > 0) {
             var error = validationErrors.map(function (item) {
@@ -20,22 +19,21 @@ router.post('/', storeValidator, async (req, res) => {
         }
 
         //Check if user already exists
+
         const checkUserNameQuery = `select exists(select username from users where username = ${pool.escape(userName)}) as userNameCheck;`
         const isUserNameUnique = (await pool.query(checkUserNameQuery))
 
         //Update existing store 
-        if (isUserNameUnique[0].userNameCheck){
-            const updateQuery = `update users set phone_number = ${pool.escape(phoneNumber)}, store_name = ${pool.escape(storeName)} where username = ${pool.escape(userName)}; 
-            select user_id from users where username = ${pool.escape(userName)};`
+        if (isUserNameUnique[0].userNameCheck) {
+            const updateQuery = `update users set phone_number = ${pool.escape(phoneNumber)}, store_name = ${pool.escape(storeName)} where username = ${pool.escape(userName)};select user_id from users where username = ${pool.escape(userName)};`
             const result = (await pool.query(updateQuery))
             console.log(result)
             if (result[0].affectedRows) {
-                const userID = result[1][0].user_id
-                updateStoreCache(userID, userName, phoneNumber, storeName)
+                updateStoreCache(userName, phoneNumber, storeName, result[1][0].user_id)
                 return res.status(200).json({
                     message: 'Successfully updated store info',
                     storeLink: `${domainName}/${userName}`,
-                    userName, storeName, phoneNumber
+                    userName, storeName, phoneNumber, userID: result[1][0].user_id
                 })
             }
             else
@@ -43,16 +41,16 @@ router.post('/', storeValidator, async (req, res) => {
         }
 
         //Create new store
-        else{
+        else {
             const insertQuery = `insert into users(username, store_name, phone_number) values(${pool.escape(userName)}, ${pool.escape(storeName)}, ${pool.escape(phoneNumber)});`
             const result = (await pool.query(insertQuery))
             console.log(result)
             if (result.affectedRows) {
-                insertStoreCache(result.insertId, userName, phoneNumber, storeName)
+                insertStoreCache(userName, phoneNumber, storeName, result.insertId)
                 return res.status(200).json({
                     message: 'Successfully created new store',
                     storeLink: `${domainName}/${userName}`,
-                    userName, storeName, phoneNumber
+                    userName, storeName, phoneNumber, userID: result.insertId
                 })
             }
             else
@@ -60,22 +58,24 @@ router.post('/', storeValidator, async (req, res) => {
         }
     } catch (error) {
         console.log(error)
-        res.status(500).json({error: ['Something went wrong!']})
+        res.status(500).json({ error: ['Something went wrong!'] })
     }
 })
 
 router.get('/all', async (req, res) => {
     try {
-        res.status(200).json(getAllStores());
+        const allStores = await getAllStores()
+        return res.status(200).json(allStores);
     } catch (error) {
         console.log(error)
         res.status(500).json({ error: ['Something went wrong!'] })
     }
 })
 
+
 router.get('/:userName', async (req, res) => {
     try {
-        res.status(200).json(getAllStores());
+        res.status(200).json(await getStore(req.params.userName));
     } catch (error) {
         console.log(error)
         res.status(500).json({ error: ['Something went wrong!'] })

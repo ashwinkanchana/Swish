@@ -9,10 +9,10 @@ const dynamoTableName = process.env.DYNAMO_TABLE_NAME
 const dynamoClient = new AWS.DynamoDB.DocumentClient()
 
 
-const insertStoreCache = (user_id, username, phone_number, store_name) => {
+const insertStoreCache = (username, phone_number, store_name, user_id) => {
     const params = {
         TableName: dynamoTableName,
-        Item: { user_id, username, phone_number, store_name }
+        Item: { username, phone_number, store_name, user_id }
     }
     dynamoClient.put(params, (err, data) => {
         if (err) {
@@ -22,13 +22,12 @@ const insertStoreCache = (user_id, username, phone_number, store_name) => {
     });
 }
 
-const updateStoreCache = (user_id, username, phone_number, store_name) => {
+const updateStoreCache = (username, phone_number, store_name, user_id) => {
     const params = {
         TableName: dynamoTableName,
-        Key: { user_id },
-        UpdateExpression: "set username = :username, phone_number=:phone_number, store_name=:store_name",
+        Key: { username },
+        UpdateExpression: "set phone_number=:phone_number, store_name=:store_name",
         ExpressionAttributeValues: {
-            ":username": username,
             ":phone_number": phone_number,
             ":store_name": store_name
         },
@@ -37,54 +36,73 @@ const updateStoreCache = (user_id, username, phone_number, store_name) => {
     dynamoClient.update(params, (err, data) => {
         if (err) {
             console.log(err)
-            throw new Error('Couldn\'t update cache')
+            throw new Error('Couldn\'t update store cache')
         }
     });
 }
 
 
-const getAllStores = ()=>{
-    var params = {
-        TableName: dynamoTableName,
-        AttributesToGet: [`username`, `store_name`, `phone_number`]
-    };
-    dynamoClient.scan(params, (err, data) => {
-        if (err) {
-            console.log(err)
-            throw new Error('Couldn\'t read all stores from cache')
-        } else {
-            return {
-                stores: data.Items
+const getAllStores = async () => {
+    return new Promise((resolve, reject) => {
+        var params = {
+            TableName: dynamoTableName,
+            AttributesToGet: [`username`, `store_name`, `phone_number`]
+        };
+        dynamoClient.scan(params, (err, data) => {
+            if (err) {
+                console.log(err)
+                reject(null, new Error('Couldn\'t read all stores from cache'))
+            } else {
+                resolve({ stores: data.Items })
             }
-        }
-    });
+        });
+    })
 }
 
 
-const getStore = (username) => {
-    var params = {
+const getStore = async (username) => {
+    return new Promise((resolve, reject) => {
+        var params = {
+            TableName: dynamoTableName,
+            KeyConditionExpression: "#username = :username",
+            ExpressionAttributeNames: {
+                "#username": "username"
+            },
+            ExpressionAttributeValues: {
+                ":username": username
+            }
+        };
+        dynamoClient.query(params, (err, data) => {
+            if (err) {
+                console.log(err)
+                reject(null, new Error('Couldn\'t read store data from cache'))
+            } else {
+                resolve({ storeData: data.Items })
+            }
+        })
+    })
+}
+
+
+
+
+const insertProductCache = (username, productsArray) => {
+    const params = {
         TableName: dynamoTableName,
-        KeyConditionExpression: "#username = :username",
-        ExpressionAttributeNames: {
-            "#username": "username"
-        },
+        Key: { username },
+        UpdateExpression: "set products=:productsArray",
         ExpressionAttributeValues: {
-            ":username": username
-        }
-    };
-    dynamoClient.query(params, (err, data) => {
+            ":productsArray": productsArray
+        },
+        ReturnValues: "UPDATED_NEW"
+    }
+    dynamoClient.update(params, (err, data) => {
         if (err) {
             console.log(err)
-            throw new Error('Couldn\'t read store data from cache')
-        } else {
-            console.log(data)
-            return {
-                storeData: data.Items
-            }
+            throw new Error('Couldn\'t update product cache')
         }
     });
 }
-getStore(`dynamo123`)
 
 
 module.exports = {
@@ -92,5 +110,7 @@ module.exports = {
     dynamoTableName,
     insertStoreCache,
     updateStoreCache,
-    getAllStores
+    getAllStores,
+    getStore,
+    insertProductCache
 }
