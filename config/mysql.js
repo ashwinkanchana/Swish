@@ -40,10 +40,7 @@ pool.query = promisify(pool.query).bind(pool)
 
 
 //export db connection pool 
-module.exports = {
-    pool,
-    mysql_credential
-}
+module.exports = pool
 
 
 

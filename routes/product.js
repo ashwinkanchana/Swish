@@ -4,12 +4,13 @@ const { pool } = require('../config/mysql')
 
 
 // GET test
-router.post('/', async (req, res) => {
+router.post('/add', async (req, res) => {
     try {
-        res.status(200)
-        .json({
-            mesage: 'Hello world',
-            id: uuidv4()
+        const {name, price, description} = req.body
+        const insertProdcutQuery = s
+        res.status(200).json({
+            mesage: 'Successfully added product',
+            name, price, description
         })
     } catch (error) {
         console.log(error)
