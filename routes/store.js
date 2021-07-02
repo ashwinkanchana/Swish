@@ -15,7 +15,7 @@ router.post('/', storeValidator, async (req, res) => {
             var error = validationErrors.map(function (item) {
                 return item['msg'];
             });
-            return res.status(400).json({ error })
+            return res.json({ error })
         }
 
         //Check if user already exists
@@ -30,7 +30,7 @@ router.post('/', storeValidator, async (req, res) => {
             console.log(result)
             if (result[0].affectedRows) {
                 updateStoreCache(userName, phoneNumber, storeName, result[1][0].user_id)
-                return res.status(200).json({
+                return res.json({
                     message: 'Successfully updated store info',
                     storeLink: `${domainName}/${userName}`,
                     userName, storeName, phoneNumber, userID: result[1][0].user_id
@@ -47,7 +47,7 @@ router.post('/', storeValidator, async (req, res) => {
             console.log(result)
             if (result.affectedRows) {
                 insertStoreCache(userName, phoneNumber, storeName, result.insertId)
-                return res.status(200).json({
+                return res.json({
                     message: 'Successfully created new store',
                     storeLink: `${domainName}/${userName}`,
                     userName, storeName, phoneNumber, userID: result.insertId
@@ -58,27 +58,27 @@ router.post('/', storeValidator, async (req, res) => {
         }
     } catch (error) {
         console.log(error)
-        res.status(500).json({ error: ['Something went wrong!'] })
+        res.json({ error: ['Something went wrong!'] })
     }
 })
 
 router.get('/all', async (req, res) => {
     try {
         const allStores = await getAllStores()
-        return res.status(200).json(allStores);
+        return res.json(allStores);
     } catch (error) {
         console.log(error)
-        res.status(500).json({ error: ['Something went wrong!'] })
+        res.json({ error: ['Something went wrong!'] })
     }
 })
 
 
 router.get('/:userName', async (req, res) => {
     try {
-        res.status(200).json(await getStore(req.params.userName));
+        res.json((await getStore(req.params.userName)).storeData[0]);
     } catch (error) {
         console.log(error)
-        res.status(500).json({ error: ['Something went wrong!'] })
+        res.json({ error: ['Something went wrong!'] })
     }
 })
 

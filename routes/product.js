@@ -16,7 +16,7 @@ router.post('/', productValidator, async (req, res) => {
             var error = validationErrors.map(function (item) {
                 return item['msg'];
             });
-            return res.status(400).json({ error })
+            return res.json({ error })
         }
 
         //Create new product
@@ -26,7 +26,7 @@ router.post('/', productValidator, async (req, res) => {
         const productsArray = result[1]
         if (result[0].affectedRows) {
             insertProductCache(userName, productsArray)
-            return res.status(200).json({
+            return res.json({
                 message: 'Successfully added a product',
             })
         }
@@ -35,7 +35,7 @@ router.post('/', productValidator, async (req, res) => {
 
     } catch (error) {
         console.log(error)
-        res.status(500).json({ error: ['Something went wrong!'] })
+        res.json({ error: ['Something went wrong!'] })
     }
 })
 
