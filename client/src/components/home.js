@@ -18,7 +18,7 @@ export default function Home() {
     }, []);
 
     function getList() {
-        axios.get("http://localhost:9000/api/store/all")
+        axios.get("/api/store/all")
             .then(function (response) {
                 if (response.data.error) {
                     alert(response.data.error)
@@ -51,7 +51,7 @@ export default function Home() {
         const data = { ...storeData }
 
 
-        axios.post('http://localhost:9000/api/store', data)
+        axios.post('/api/store', data)
             .then(function (response) {
                 if (response.data.error) {
                     alert(response.data.error)

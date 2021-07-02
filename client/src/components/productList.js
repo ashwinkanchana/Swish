@@ -1,54 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from 'axios';
 import { withRouter, useHistory } from 'react-router-dom';
-/*
-{
-    "storeData": [
-        {
-            "phone_number": "1111111111",
-            "user_id": 19,
-            "username": "dynamo1",
-            "products": [
-                {
-                    "product_description": "this is product description",
-                    "product_name": "item12",
-                    "product_price": 192.43
-                },
-                {
-                    "product_description": "this is product description",
-                    "product_name": "item13",
-                    "product_price": 192.43
-                },
-                {
-                    "product_description": "this is product description",
-                    "product_name": "item14",
-                    "product_price": 192.43
-                },
-                {
-                    "product_description": "this is product description",
-                    "product_name": "item15",
-                    "product_price": 192.43
-                }
-            ],
-            "store_name": "dynamite"
-        }
-    ]
-}
-
-
-
-{
-    "productName":"item15",
-    "price":"192.43",
-    "description":"this is product description",
-    "userName":"dynamo1",
-    "userID":"19"
-}
-
-
-
-
-*/
 
 
 function Products(props) {
@@ -70,7 +22,7 @@ function Products(props) {
     }, []);
 
     function getProductsList() {
-        axios.get(`http://localhost:9000/api/store/${username}`)
+        axios.get(`/api/store/${username}`)
             .then(function (response) {
                 console.log(response)
                 if (response.data.error) {
@@ -116,7 +68,7 @@ function Products(props) {
         data['userID'] = storeData.user_id
         data['userName'] = username
         console.log(data)
-        axios.post('http://localhost:9000/api/product', data)
+        axios.post('/api/product', data)
             .then(function (response) {
                 if (response.data.error) {
                     alert(response.data.error)

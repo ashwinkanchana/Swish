@@ -17,6 +17,11 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 
+
+if (process.env.NODE_ENV === 'production') {
+    app.use(express.static('client/build'))
+}
+
 //api routes
 app.use('/api/store', require('./routes/store'))
 app.use('/api/product', require('./routes/product'))
